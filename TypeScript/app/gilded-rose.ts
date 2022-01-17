@@ -1,69 +1,81 @@
+import {
+  getNewAgedBriQuality,
+  getNewBackstageItemQuality,
+  getNewConjuredItemQuality,
+  getNewGenericItemQuality, getNewSulfurasItemQuantity
+} from "./GlidedRoseUtils";
+
+
 export class Item {
-  name: string;
-  sellIn: number;
-  quality: number;
+
+  private _name: string;
+  private _sellIn: number;
+  private _quality: number;
+
+  get name(): string {
+    return this._name;
+  }
+
+  get sellIn(): number {
+    return this._sellIn;
+  }
+
+  get quality(): number {
+    return this._quality;
+  }
+
+  set name(value: string) {
+    this._name = value;
+  }
+
+  set sellIn(value: number) {
+    this._sellIn = value;
+  }
+
+  set quality(value: number) {
+    this._quality = value;
+  }
 
   constructor(name, sellIn, quality) {
-    this.name = name;
-    this.sellIn = sellIn;
-    this.quality = quality;
+    this._name = name;
+    this._sellIn = sellIn;
+    this._quality = quality;
   }
 }
 
+/**
+ * Map each different type of item to respective fuinction of updated quantity
+ * **/
+const updateItemQualityByNameMap = new Map<string, any>([
+  ["Sulfuras, Hand of Ragnaros", getNewSulfurasItemQuantity],
+  ["Backstage passes to a TAFKAL80ETC concert", getNewBackstageItemQuality],
+  ["Aged Brie", getNewAgedBriQuality],
+  ["Conjured Mana Cake", getNewConjuredItemQuality]
+]);
+
 export class GildedRose {
-  items: Array<Item>;
+  protected items: Array<Item>;
 
   constructor(items = [] as Array<Item>) {
     this.items = items;
   }
 
-  updateQuality() {
-    for (let i = 0; i < this.items.length; i++) {
-      if (this.items[i].name != 'Aged Brie' && this.items[i].name != 'Backstage passes to a TAFKAL80ETC concert') {
-        if (this.items[i].quality > 0) {
-          if (this.items[i].name != 'Sulfuras, Hand of Ragnaros') {
-            this.items[i].quality = this.items[i].quality - 1
-          }
-        }
-      } else {
-        if (this.items[i].quality < 50) {
-          this.items[i].quality = this.items[i].quality + 1
-          if (this.items[i].name == 'Backstage passes to a TAFKAL80ETC concert') {
-            if (this.items[i].sellIn < 11) {
-              if (this.items[i].quality < 50) {
-                this.items[i].quality = this.items[i].quality + 1
-              }
-            }
-            if (this.items[i].sellIn < 6) {
-              if (this.items[i].quality < 50) {
-                this.items[i].quality = this.items[i].quality + 1
-              }
-            }
-          }
-        }
-      }
-      if (this.items[i].name != 'Sulfuras, Hand of Ragnaros') {
-        this.items[i].sellIn = this.items[i].sellIn - 1;
-      }
-      if (this.items[i].sellIn < 0) {
-        if (this.items[i].name != 'Aged Brie') {
-          if (this.items[i].name != 'Backstage passes to a TAFKAL80ETC concert') {
-            if (this.items[i].quality > 0) {
-              if (this.items[i].name != 'Sulfuras, Hand of Ragnaros') {
-                this.items[i].quality = this.items[i].quality - 1
-              }
-            }
-          } else {
-            this.items[i].quality = this.items[i].quality - this.items[i].quality
-          }
-        } else {
-          if (this.items[i].quality < 50) {
-            this.items[i].quality = this.items[i].quality + 1
-          }
-        }
-      }
+  /**
+   * Updates item
+   * Calls map for different type of items
+   * Else updates item generically
+   * **/
+  static updateItem(item: Item) {
+    if (item?.name && updateItemQualityByNameMap.has(item.name)) {
+      item.quality = updateItemQualityByNameMap.get(item.name)(item);
+    }else {
+      item.quality = getNewGenericItemQuality(item);
     }
+    item.sellIn -= 1;
+  }
 
+  updateQuality() {
+    this.items.forEach((item) => GildedRose.updateItem(item))
     return this.items;
   }
 }
